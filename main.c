@@ -119,6 +119,8 @@ static const char *const A_FLAG[8]  = {"88666...","8866666.","88666...","88.....
 
 static u16 *g_pear[3], *g_walk, *g_fly, *g_seed, *g_coin, *g_spark, *g_flag, *g_boss;
 
+static void vcopy(const void *src, void *dst, int n) { DC_FlushRange(src, n); dmaCopy(src, dst, n); }
+
 /* convierte arte de texto a bytes 8bpp en orden de tiles 8x8 (mapeo 1D) */
 static void art_to_gfx(const char *const *art, int w, int h, u16 *dst)
 {
@@ -132,7 +134,7 @@ static void art_to_gfx(const char *const *art, int w, int h, u16 *dst)
             int v = (ch >= '0' && ch <= '9') ? ch - '0' : (ch >= 'a' && ch <= 'f') ? ch - 'a' + 10 : 0;
             buf[((y >> 3) * tw + (x >> 3)) * 64 + (y & 7) * 8 + (x & 7)] = (u8)v;
         }
-    dmaCopy(buf, dst, w * h);
+    vcopy(buf, dst, w * h);
 }
 
 static void make_boss(void)   /* manzana podrida 32x32 generada por codigo */
@@ -151,7 +153,7 @@ static void make_boss(void)   /* manzana podrida 32x32 generada por codigo */
             if (y >= 24 && y <= 26 && x >= 10 && x <= 22) v = 2;            /* boca */
             buf[((y >> 3) * 4 + (x >> 3)) * 64 + (y & 7) * 8 + (x & 7)] = (u8)v;
         }
-    dmaCopy(buf, g_boss, 1024);
+    vcopy(buf, g_boss, 1024);
 }
 
 static void make_tiles(void)
@@ -166,7 +168,7 @@ static void make_tiles(void)
             tb[T_SPIKE][i] = (((x % 4 == 1 || x % 4 == 2) ? y >= 2 : y >= 5)) ? 7 : 0;
             tb[T_PLAT][i]  = (y < 3) ? 11 : 0;
         }
-    dmaCopy(tb, bgGetGfxPtr(bg), sizeof(tb));
+    vcopy(tb, bgGetGfxPtr(bg), sizeof(tb));
     BG_PALETTE[0] = RGB15(10, 20, 31);  BG_PALETTE[3] = RGB15(8, 24, 6);
     BG_PALETTE[7] = RGB15(24, 24, 26);  BG_PALETTE[8] = RGB15(18, 10, 4);
     BG_PALETTE[9] = RGB15(12, 6, 2);    BG_PALETTE[10] = RGB15(26, 12, 6);
@@ -518,12 +520,16 @@ int main(void)
     videoSetModeSub(MODE_0_2D);
     vramSetBankA(VRAM_A_MAIN_BG);
     vramSetBankB(VRAM_B_MAIN_SPRITE);
+    lcdMainOnTop();
+    BG_PALETTE[0] = RGB15(10, 20, 31);
     consoleDemoInit();
+    iprintf("\n  HOMBRE PERA\n  v0.2 arrancando...\n");
 
     bg = bgInit(0, BgType_Text8bpp, BgSize_T_512x256, 0, 1);
     map = (u16 *)bgGetMapPtr(bg);
     build_level();
     make_tiles();
+    iprintf("  1 fondo ok\n");
 
     oamInit(&oamMain, SpriteMapping_1D_32, false);
     u16 pal[] = {0, RGB15(31,31,31), RGB15(1,1,2), RGB15(8,24,6), RGB15(3,13,3), RGB15(18,30,12), RGB15(31,6,6),
@@ -542,11 +548,13 @@ int main(void)
     art_to_gfx(A_SEED, 8, 8, g_seed); art_to_gfx(A_COIN, 8, 8, g_coin);
     art_to_gfx(A_SPARK, 8, 8, g_spark); art_to_gfx(A_FLAG, 8, 8, g_flag);
     make_boss();
+    iprintf("  2 sprites ok\n");
 
     P.w = 10; P.h = 14; cpx = 24; cpy = 146;
     init_level();
     respawn();
     cam = 0;
+    iprintf("  3 nivel ok\n");
 
     for (;;) {
         scanKeys();
