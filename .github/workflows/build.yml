@@ -1,0 +1,23 @@
+name: Build NDS ROM
+on:
+  push:
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container: devkitpro/devkitarm
+    steps:
+      - uses: actions/checkout@v4
+      - name: Preparar Makefile oficial de devkitPro
+        run: |
+          dkp-pacman -Sy --noconfirm --needed nds-dev nds-examples || true
+          M=$(find $DEVKITPRO/examples/nds -path '*hello_world*' -name Makefile | head -1)
+          [ -z "$M" ] && M=$(find $DEVKITPRO/examples/nds -path '*templates*' -name Makefile | head -1)
+          echo "Usando $M"
+          cp "$M" Makefile
+          sed -i 's/^SOURCES.*/SOURCES := ./' Makefile
+      - run: make
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hombrepera-nds
+          path: "*.nds"
