@@ -12,6 +12,14 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
+/* 0 = sin consola de texto (prueba); 1 = con HUD de texto en la pantalla inferior */
+#define USE_CONSOLE 0
+#if USE_CONSOLE
+#define DBG(s) iprintf(s)
+#else
+#define DBG(s) ((void)0)
+#endif
+
 #define LW 128          /* ancho del nivel en tiles de 8x8 */
 #define LH 24           /* alto  del nivel en tiles        */
 #define FX 256          /* punto fijo 24.8                 */
@@ -497,6 +505,9 @@ static void draw(void)
 
 static void hud(void)
 {
+#if !USE_CONSOLE
+    return;
+#endif
     consoleClear();
     iprintf("\n  HOMBRE PERA  -  Pradera Frutal\n\n");
     iprintf("  VIDA     %d/3\n", php < 0 ? 0 : php);
@@ -532,7 +543,7 @@ int main(void)
     map = (u16 *)bgGetMapPtr(bg);
     build_level();
     make_tiles();
-    iprintf("  1 fondo ok\n");
+    DBG("  1 fondo ok\n");
     BG_PALETTE[0] = RGB15(31, 28, 0);        /* AMARILLO: fondo listo */
 
     oamInit(&oamMain, SpriteMapping_1D_32, false);
@@ -552,14 +563,14 @@ int main(void)
     art_to_gfx(A_SEED, 8, 8, g_seed); art_to_gfx(A_COIN, 8, 8, g_coin);
     art_to_gfx(A_SPARK, 8, 8, g_spark); art_to_gfx(A_FLAG, 8, 8, g_flag);
     make_boss();
-    iprintf("  2 sprites ok\n");
+    DBG("  2 sprites ok\n");
     BG_PALETTE[0] = RGB15(0, 26, 0);         /* VERDE: sprites listos */
 
     P.w = 10; P.h = 14; cpx = 24; cpy = 146;
     init_level();
     respawn();
     cam = 0;
-    iprintf("  3 nivel ok\n");
+    DBG("  3 nivel ok\n");
     BG_PALETTE[0] = RGB15(10, 20, 31);       /* CELESTE: todo listo */
 
     for (;;) {
